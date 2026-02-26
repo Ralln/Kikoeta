@@ -1,0 +1,165 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>扫雷解密第一关</title>
+<style>
+  body { font-family: sans-serif; background: #f0f0f0; text-align: center; padding: 20px; }
+  h1 { margin-bottom: 10px; }
+  #game { display: inline-block; margin-top: 20px; }
+  .row { display: flex; }
+  .cell {
+    width: 40px; height: 40px; border: 1px solid #999;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; font-weight: bold; background: #ccc;
+    user-select: none;
+  }
+  .cell.revealed { background: #eee; cursor: default; }
+  #message { margin-top: 15px; font-weight: bold; }
+  #passwordSection { display: none; margin-top: 20px; }
+  input { padding: 5px; width: 150px; }
+  button { padding: 5px 10px; }
+</style>
+</head>
+<body>
+
+<h1>扫雷解密 - 第一关</h1>
+<p>完成扫雷即可获得进入下一关的密码！</p >
+
+<div id="game"></div>
+<div id="message"></div>
+
+<div id="passwordSection">
+  <p>输入密码进入下一关：</p >
+  <input id="passwordInput" placeholder="输入密码">
+  <button onclick="checkPassword()">确认</button>
+  <div id="nextMessage"></div>
+</div>
+
+<script>
+const rows = 9;
+const cols = 9;
+const minesCount = 10;
+let board = [];
+let minePositions = [];
+let revealedCount = 0;
+const password = "OPEN2026";
+
+function initGame() {
+  const game = document.getElementById('game');
+  game.innerHTML = '';
+  board = [];
+  minePositions = [];
+  revealedCount = 0;
+  document.getElementById('message').textContent = '';
+  document.getElementById('passwordSection').style.display = 'none';
+  document.getElementById('nextMessage').textContent = '';
+
+  // 随机布雷
+  while (minePositions.length < minesCount) {
+    let r = Math.floor(Math.random() * rows);
+    let c = Math.floor(Math.random() * cols);
+    let key = r + "," + c;
+    if (!minePositions.includes(key)) minePositions.push(key);
+  }
+
+  // 创建格子
+  for (let r = 0; r < rows; r++) {
+    let rowDiv = document.createElement('div');
+    rowDiv.className = 'row';
+    board[r] = [];
+    for (let c = 0; c < cols; c++) {
+      let cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.addEventListener('click', onCellClick);
+      rowDiv.appendChild(cell);
+      board[r][c] = { revealed: false, mine: minePositions.includes(r + "," + c), element: cell, number: 0 };
+    }
+    game.appendChild(rowDiv);
+  }
+
+  // 计算数字
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!board[r][c].mine) {
+        board[r][c].number = countAdjacentMines(r, c);
+      }
+    }
+  }
+}
+
+function countAdjacentMines(r, c) {
+  let count = 0;
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      let nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+        if (board[nr][nc].mine) count++;
+      }
+    }
+  }
+  return count;
+}
+
+function onCellClick(e) {
+  const r = parseInt(this.dataset.row);
+  const c = parseInt(this.dataset.col);
+  const cell = board[r][c];
+  if (cell.revealed) return;
+
+  cell.revealed = true;
+  cell.element.classList.add('revealed');
+
+  if (cell.mine) {
+    cell.element.textContent = "💣";
+    document.getElementById('message').textContent = "踩到雷了！重新开始";
+    setTimeout(initGame, 1000);
+  } else {
+    if (cell.number > 0) cell.element.textContent = cell.number;
+    else floodFill(r, c);
+
+    revealedCount++;
+    if (revealedCount === rows * cols - minesCount) {
+      document.getElementById('message').textContent = "恭喜完成第一关！密码已显示";
+      document.getElementById('passwordSection').style.display = 'block';
+    }
+  }
+}
+
+function floodFill(r, c) {
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      let nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+        let nCell = board[nr][nc];
+        if (!nCell.revealed && !nCell.mine) {
+          nCell.revealed = true;
+          nCell.element.classList.add('revealed');
+          revealedCount++;
+          if (nCell.number > 0) nCell.element.textContent = nCell.number;
+          else floodFill(nr, nc);
+        }
+      }
+    }
+  }
+}
+
+function checkPassword() {
+  const input = document.getElementById('passwordInput').value.trim();
+  const nextMessage = document.getElementById('nextMessage');
+  if (input === password) {
+    nextMessage.textContent = "密码正确！欢迎进入第二关（示例隐藏内容）🎉";
+  } else {
+    nextMessage.textContent = "密码错误，请再试一次";
+  }
+}
+
+initGame();
+</script>
+
+</body>
+</html>
