@@ -6,7 +6,6 @@
     <style>
         body { font-family: 'Courier New', monospace; background: #c0c0c0; text-align: center; padding-top: 20px; }
         
-        /* 扫雷面板外框 */
         #game-container {
             display: inline-block;
             background: #bdbdbd;
@@ -18,7 +17,6 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
-        /* 顶部状态栏 */
         #status-bar {
             display: flex;
             justify-content: space-between;
@@ -57,11 +55,11 @@
         }
         #face:active { border: 2px solid #7b7b7b; border-right-color: #fff; border-bottom-color: #fff; }
 
-        /* 关键修改：45行 x 30列，格宽22px */
+        /* 横向布局：45列 x 30行 */
         #grid {
             display: grid;
-            grid-template-columns: repeat(30, 22px);
-            grid-template-rows: repeat(45, 22px);
+            grid-template-columns: repeat(45, 20px);
+            grid-template-rows: repeat(30, 20px);
             border: 2px solid #7b7b7b;
             border-right-color: #fff;
             border-bottom-color: #fff;
@@ -69,8 +67,8 @@
         }
 
         .cell {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             background: #bdbdbd;
             border: 2px solid #fff;
             border-right-color: #7b7b7b;
@@ -78,7 +76,7 @@
             box-sizing: border-box;
             cursor: pointer;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,9 +88,7 @@
             cursor: default;
         }
 
-        .cell.mine { background-color: #7b7b7b; }
         .cell.mine-hit { background-color: red; }
-
         .n1 { color: blue; } .n2 { color: green; } .n3 { color: red; } 
         .n4 { color: darkblue; } .n5 { color: darkred; } .n6 { color: teal; }
         .n7 { color: black; } .n8 { color: gray; }
@@ -113,9 +109,8 @@
     </div>
 
     <script>
-        // 核心参数：45行 x 30列
-        const rows = 45;
-        const cols = 30;
+        const rows = 30;
+        const cols = 45;
         const minesCount = 228;
         
         let mines = [];
@@ -136,7 +131,6 @@
             for (let i = 0; i < rows * cols; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
-                cell.dataset.index = i;
                 cell.addEventListener('mousedown', (e) => handleMouse(e, i));
                 cell.addEventListener('contextmenu', (e) => e.preventDefault());
                 gridElement.appendChild(cell);
@@ -146,7 +140,7 @@
 
         function handleMouse(e, index) {
             if (gameOver) return;
-            if (e.button === 0) { // 左键
+            if (e.button === 0) {
                 if (gridElement.children[index].innerText === '🚩') return;
                 if (firstClick) {
                     startTimer();
@@ -154,7 +148,7 @@
                     firstClick = false;
                 }
                 reveal(index);
-            } else if (e.button === 2) { // 右键
+            } else if (e.button === 2) {
                 toggleFlag(index);
             }
         }
@@ -167,11 +161,42 @@
             }, 1000);
         }
 
+        // 核心改进：均匀布雷算法
         function generateMines(excludeIndex) {
-            let positions = Array.from({length: rows * cols}, (_, i) => i);
-            positions = positions.filter(p => p !== excludeIndex); 
-            positions.sort(() => Math.random() - 0.5);
-            mines = positions.slice(0, minesCount);
+            mines = [];
+            let currentMinesCount = 0;
+            let tempGrid = Array(rows).fill().map(() => Array(cols).fill(0));
+
+            const rStart = Math.floor(excludeIndex / cols);
+            const cStart = excludeIndex % cols;
+            
+            while (currentMinesCount < minesCount) {
+                let r = Math.floor(Math.random() * rows);
+                let c = Math.floor(Math.random() * cols);
+
+                // 排除点击处周围 5x5 的范围，确保开局能点开一大片
+                if (tempGrid[r][c] === 1 || (Math.abs(r - rStart) <= 2 && Math.abs(c - cStart) <= 2)) {
+                    continue;
+                }
+
+                // 密度检查：数一下周围 3x3 已经有多少雷
+                let localMines = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        let nr = r + i, nc = c + j;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                            if (tempGrid[nr][nc] === 1) localMines++;
+                        }
+                    }
+                }
+
+                // 如果周围雷数小于 4，则布雷；否则只有很小几率布雷，强制打散地雷堆
+                if (localMines < 4 || Math.random() < 0.05) {
+                    tempGrid[r][c] = 1;
+                    mines.push(r * cols + c);
+                    currentMinesCount++;
+                }
+            }
         }
 
         function toggleFlag(index) {
@@ -184,8 +209,8 @@
                 cell.innerText = '🚩';
                 flags++;
             }
-            let displayVal = minesCount - flags;
-            mineDisplay.innerText = (displayVal < 0 ? "-" : "") + Math.abs(displayVal).toString().padStart(2, '0');
+            let val = minesCount - flags;
+            mineDisplay.innerText = (val < 0 ? "-" : "") + Math.abs(val).toString().padStart(2, '0');
         }
 
         function reveal(index) {
@@ -219,15 +244,11 @@
             mines.forEach(m => {
                 const cell = gridElement.children[m];
                 cell.classList.add('revealed');
-                if (cell.innerText !== '🚩') {
-                    cell.innerText = '💣';
-                }
+                if (cell.innerText !== '🚩') cell.innerText = '💣';
                 if (m === hitIndex) cell.classList.add('mine-hit');
             });
-
             if (won) {
                 face.innerText = '😎';
-                // 修改后的通关输出
                 setTimeout(() => alert('password:vos'), 500);
             } else {
                 face.innerText = '😵';
