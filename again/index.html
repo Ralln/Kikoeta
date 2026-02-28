@@ -15,6 +15,7 @@
             border-bottom-color: #7b7b7b;
             padding: 10px;
             user-select: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
 
         /* 顶部状态栏 */
@@ -26,7 +27,7 @@
             border: 2px solid #7b7b7b;
             border-right-color: #fff;
             border-bottom-color: #fff;
-            padding: 5px 10px;
+            padding: 5px 15px;
             margin-bottom: 10px;
         }
 
@@ -34,16 +35,16 @@
             background: #000;
             color: #ff0000;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
-            padding: 2px 5px;
-            border: 1px solid #7b7b7b;
-            min-width: 40px;
+            padding: 2px 8px;
+            border: 2px inset #7b7b7b;
+            min-width: 50px;
         }
 
         #face {
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             background: #bdbdbd;
             border: 2px solid #fff;
             border-right-color: #7b7b7b;
@@ -52,17 +53,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
         }
+        #face:active { border: 2px solid #7b7b7b; border-right-color: #fff; border-bottom-color: #fff; }
 
-        /* 游戏网格：修改为 20x35，格子大小调为 22px 以适应屏幕 */
+        /* 关键修改：45行 x 30列，格宽22px */
         #grid {
             display: grid;
-            grid-template-columns: repeat(35, 22px);
-            grid-template-rows: repeat(20, 22px);
+            grid-template-columns: repeat(30, 22px);
+            grid-template-rows: repeat(45, 22px);
             border: 2px solid #7b7b7b;
             border-right-color: #fff;
             border-bottom-color: #fff;
+            background-color: #7b7b7b;
         }
 
         .cell {
@@ -75,7 +78,7 @@
             box-sizing: border-box;
             cursor: pointer;
             font-weight: bold;
-            font-size: 13px; /* 缩小字号以适应小格子 */
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,7 +93,6 @@
         .cell.mine { background-color: #7b7b7b; }
         .cell.mine-hit { background-color: red; }
 
-        /* 数字颜色 */
         .n1 { color: blue; } .n2 { color: green; } .n3 { color: red; } 
         .n4 { color: darkblue; } .n5 { color: darkred; } .n6 { color: teal; }
         .n7 { color: black; } .n8 { color: gray; }
@@ -99,7 +101,7 @@
 <body>
 
     <h1>第四关：需要电脑右键</h1>
-    <p>否则没法标雷</p >
+    <p>否则没法插旗</p >
 
     <div id="game-container">
         <div id="status-bar">
@@ -111,9 +113,9 @@
     </div>
 
     <script>
-        // 修改为 20x35 和 228 颗雷
-        const rows = 20;
-        const cols = 35;
+        // 核心参数：45行 x 30列
+        const rows = 45;
+        const cols = 30;
         const minesCount = 228;
         
         let mines = [];
@@ -139,32 +141,26 @@
                 cell.addEventListener('contextmenu', (e) => e.preventDefault());
                 gridElement.appendChild(cell);
             }
-            // 初始化显示
             mineDisplay.innerText = minesCount.toString().padStart(3, '0');
         }
 
         function handleMouse(e, index) {
             if (gameOver) return;
-            
-            // 左键点击
-            if (e.button === 0) {
+            if (e.button === 0) { // 左键
                 if (gridElement.children[index].innerText === '🚩') return;
-                
                 if (firstClick) {
                     startTimer();
                     generateMines(index);
                     firstClick = false;
                 }
                 reveal(index);
-            } 
-            // 右键点击
-            else if (e.button === 2) {
+            } else if (e.button === 2) { // 右键
                 toggleFlag(index);
             }
         }
 
         function startTimer() {
-            if (timerInterval) return; // 防止重复启动
+            if (timerInterval) return;
             timerInterval = setInterval(() => {
                 timeElapsed++;
                 timerDisplay.innerText = Math.min(timeElapsed, 999).toString().padStart(3, '0');
@@ -181,7 +177,6 @@
         function toggleFlag(index) {
             const cell = gridElement.children[index];
             if (cell.classList.contains('revealed')) return;
-
             if (cell.innerText === '🚩') {
                 cell.innerText = '';
                 flags--;
@@ -189,8 +184,8 @@
                 cell.innerText = '🚩';
                 flags++;
             }
-            // 实时更新剩余雷数显示
-            mineDisplay.innerText = Math.max(minesCount - flags, -99).toString().padStart(3, '0').slice(-3);
+            let displayVal = minesCount - flags;
+            mineDisplay.innerText = (displayVal < 0 ? "-" : "") + Math.abs(displayVal).toString().padStart(2, '0');
         }
 
         function reveal(index) {
@@ -221,18 +216,19 @@
         function endGame(won, hitIndex) {
             gameOver = true;
             clearInterval(timerInterval);
-            
             mines.forEach(m => {
                 const cell = gridElement.children[m];
                 cell.classList.add('revealed');
-                cell.classList.add('mine');
-                if (cell.innerText !== '🚩') cell.innerText = '💣';
+                if (cell.innerText !== '🚩') {
+                    cell.innerText = '💣';
+                }
                 if (m === hitIndex) cell.classList.add('mine-hit');
             });
 
             if (won) {
                 face.innerText = '😎';
-                setTimeout(() => alert('password：vos'), 500);
+                // 修改后的通关输出
+                setTimeout(() => alert('password:vos'), 500);
             } else {
                 face.innerText = '😵';
             }
@@ -246,9 +242,7 @@
                 for (let j = -1; j <= 1; j++) {
                     if (i === 0 && j === 0) continue;
                     let nr = r + i, nc = c + j;
-                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                        res.push(nr * cols + nc);
-                    }
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) res.push(nr * cols + nc);
                 }
             }
             return res;
