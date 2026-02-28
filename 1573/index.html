@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>To:</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #ffffff;
+            text-align: center;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            padding: 60px 15px;
+            color: #333;
+        }
+
+        .date-header {
+            font-size: 20px;
+            letter-spacing: 1px;
+            margin-bottom: 50px;
+            font-weight: 300;
+        }
+
+        .photo-story {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px; /* 图片之间的间距，增加一点呼吸感 */
+            max-width: 100%;
+        }
+
+        .photo-story img {
+            width: 95%;
+            max-width: 750px; /* 限制宽度 */
+            height: auto;
+            aspect-ratio: 16 / 9; /* 强制横图比例 */
+            object-fit: cover;
+            border-radius: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            display: block;
+        }
+
+
+        .footer-space {
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="date-header">
+        2021.11.08 到 2026.02.28，共 1573 天。
+    </div>
+
+    <div class="photo-story">
+        <img src="pic3.jpg">
+        <img src="pic4.jpg">
+        <img src="pic5.jpg">
+        <img src="pic6.jpg">
+        <img src="pic7.jpg">
+        <img src="pic8.jpg">
+    </div>
+
+    <div class="footer-space"></div>
+
+</body>
+</html>
